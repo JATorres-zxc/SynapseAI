@@ -62,10 +62,10 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
                   <span className="text-xs text-muted-foreground px-2">{message.senderName}</span>
                 )}
                 <Card className={`
-                  p-3 rounded-2xl max-w-xs break-words
+                  p-3 rounded-2xl max-w-xs break-words border-0
                   ${isOwn 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-card border'
+                    ? 'bg-slate-700 dark:bg-slate-700 text-white' 
+                    : 'bg-blue-50 dark:bg-slate-800 text-foreground'
                   }
                 `}>
                   {renderMessageContent(message)}
