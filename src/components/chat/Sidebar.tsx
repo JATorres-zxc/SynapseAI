@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -6,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User } from 'lucide-react';
+import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User, Search } from 'lucide-react';
 import ProfileModal from '@/components/ProfileModal';
+import SearchModal from '@/components/search/SearchModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const mockChats = [
     { id: 'chat1', name: 'John Doe', lastMessage: 'Hey there!', type: 'direct', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
@@ -49,6 +50,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-primary">ChatApp</h1>
             <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSearchModal(true)}
+                className="rounded-xl"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -148,6 +157,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
       <ProfileModal 
         isOpen={showProfileModal} 
         onClose={() => setShowProfileModal(false)} 
+      />
+      
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        currentChatId={selectedChatId}
       />
     </>
   );
