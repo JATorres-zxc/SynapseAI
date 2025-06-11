@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User, Search } from 'lucide-react';
+import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User, Search, Bot } from 'lucide-react';
 import ProfileModal from '@/components/ProfileModal';
 import SearchModal from '@/components/search/SearchModal';
+import ChatbotModal from '@/components/chat/ChatbotModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const isMobile = useIsMobile();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showChatbotModal, setShowChatbotModal] = useState(false);
 
   const mockChats = [
     { id: 'chat1', name: 'John Doe', lastMessage: 'Hey there!', type: 'direct', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
@@ -152,6 +154,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
             ))}
           </div>
         </div>
+
+        {/* Chatbot Button */}
+        <div className="p-4 border-t border-border">
+          <Button
+            variant="outline"
+            className="w-full rounded-xl"
+            onClick={() => setShowChatbotModal(true)}
+          >
+            <Bot className="h-4 w-4 mr-2" />
+            Chat with AI Assistant
+          </Button>
+        </div>
       </div>
 
       <ProfileModal 
@@ -163,6 +177,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
         currentChatId={selectedChatId}
+      />
+
+      <ChatbotModal
+        isOpen={showChatbotModal}
+        onClose={() => setShowChatbotModal(false)}
       />
     </>
   );
