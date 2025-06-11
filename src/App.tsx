@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,12 +17,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <AuthProvider>
-        <SocketProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+      <BrowserRouter> {/* Move Router to wrap AuthProvider */}
+        <AuthProvider> {/* Now AuthProvider is inside Router */}
+          <SocketProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -36,10 +35,10 @@ const App = () => (
                   } 
                 />
               </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </SocketProvider>
-      </AuthProvider>
+            </TooltipProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </ThemeProvider>
   </QueryClientProvider>
 );
