@@ -7,6 +7,12 @@ interface MessageStatus {
   readBy?: string[];
 }
 
+interface Reaction {
+  emoji: string;
+  users: string[];
+  count: number;
+}
+
 interface Message {
   id: string;
   senderId: string;
@@ -19,6 +25,8 @@ interface Message {
   isPinned?: boolean;
   isEdited?: boolean;
   isDeleted?: boolean;
+  reactions?: Reaction[];
+  mentions?: string[];
   replyTo?: {
     messageId: string;
     content: string;
@@ -55,6 +63,8 @@ interface SocketContextType {
   getPinnedMessages: (chatId: string) => Message[];
   replyToMessage: (originalMessageId: string, content: string, chatId: string) => void;
   getMessageById: (messageId: string) => Message | undefined;
+  addReaction: (messageId: string, emoji: string) => void;
+  removeReaction: (messageId: string, emoji: string) => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -244,6 +254,58 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     return messages.find(msg => msg.id === messageId);
   };
 
+  const addReaction = (messageId: string, emoji: string) => {
+    const currentUser = 'You'; // This would come from auth context
+    
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        const reactions = msg.reactions || [];
+        const existingReaction = reactions.find(r => r.emoji === emoji);
+        
+        if (existingReaction) {
+          // Add user to existing reaction
+          if (!existingReaction.users.includes(currentUser)) {
+            existingReaction.users.push(currentUser);
+            existingReaction.count = existingReaction.users.length;
+          }
+        } else {
+          // Create new reaction
+          reactions.push({
+            emoji,
+            users: [currentUser],
+            count: 1
+          });
+        }
+        
+        return { ...msg, reactions: [...reactions] };
+      }
+      return msg;
+    }));
+  };
+
+  const removeReaction = (messageId: string, emoji: string) => {
+    const currentUser = 'You'; // This would come from auth context
+    
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        const reactions = (msg.reactions || []).map(reaction => {
+          if (reaction.emoji === emoji) {
+            const updatedUsers = reaction.users.filter(user => user !== currentUser);
+            return {
+              ...reaction,
+              users: updatedUsers,
+              count: updatedUsers.length
+            };
+          }
+          return reaction;
+        }).filter(reaction => reaction.count > 0);
+        
+        return { ...msg, reactions };
+      }
+      return msg;
+    }));
+  };
+
   return (
     <SocketContext.Provider value={{ 
       messages, 
@@ -262,7 +324,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       deleteMessage,
       getPinnedMessages,
       replyToMessage,
-      getMessageById
+      getMessageById,
+      addReaction,
+      removeReaction
     }}>
       {children}
     </SocketContext.Provider>

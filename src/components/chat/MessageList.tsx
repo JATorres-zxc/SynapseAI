@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +12,7 @@ import PinnedMessages from './PinnedMessages';
 import ForwardMessageModal from './ForwardMessageModal';
 import MessageActions from './MessageActions';
 import ReplyInput from './ReplyInput';
+import MessageReactions from './MessageReactions';
 
 interface MessageListProps {
   chatId: string;
@@ -173,6 +173,29 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
       );
     }
 
+    const renderContentWithMentions = (content: string) => {
+      if (!message.mentions || message.mentions.length === 0) {
+        return content;
+      }
+
+      const mentionRegex = /@(\w+)/g;
+      const parts = content.split(mentionRegex);
+      
+      return parts.map((part, index) => {
+        if (index % 2 === 1 && message.mentions.includes(part)) {
+          return (
+            <span
+              key={index}
+              className="bg-primary/20 text-primary px-1 rounded font-medium"
+            >
+              @{part}
+            </span>
+          );
+        }
+        return part;
+      });
+    };
+
     switch (message.type) {
       case 'voice':
         return (
@@ -198,7 +221,7 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
                 {new Date(message.forwardedFrom.originalTimestamp).toLocaleString()}
               </div>
             )}
-            {message.content}
+            <div>{renderContentWithMentions(message.content)}</div>
           </div>
         );
     }
@@ -256,6 +279,15 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Message Reactions */}
+                  <div className={`px-2 ${isOwn ? 'flex justify-end' : ''}`}>
+                    <MessageReactions 
+                      messageId={message.id} 
+                      reactions={message.reactions}
+                    />
+                  </div>
+                  
                   <div className={`flex gap-2 items-center px-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                     <span className="text-xs text-muted-foreground">
                       {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

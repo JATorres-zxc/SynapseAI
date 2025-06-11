@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Send, Mic, File, Settings } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import MentionsInput from './MentionsInput';
+import EmojiPicker from './EmojiPicker';
 
 interface MessageInputProps {
   chatId: string;
@@ -22,6 +23,18 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
+  const extractMentions = (text: string): string[] => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions: string[] = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(text)) !== null) {
+      mentions.push(match[1]);
+    }
+    
+    return mentions;
+  };
+
   const handleSendMessage = () => {
     if (!message.trim()) return;
 
@@ -31,19 +44,21 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
       clearTimeout(typingTimeoutRef.current);
     }
 
+    const mentions = extractMentions(message);
+
     sendMessage({
       senderId: user?.id || '',
       senderName: user?.username || '',
       content: message,
       type: 'text',
-      chatId
+      chatId,
+      mentions: mentions.length > 0 ? mentions : undefined
     });
 
     setMessage('');
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
+  const handleInputChange = (value: string) => {
     setMessage(value);
 
     // Handle typing indicator
@@ -72,6 +87,10 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage(prev => prev + emoji);
   };
 
   useEffect(() => {
@@ -150,15 +169,21 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
         </Button>
 
         <div className="flex-1">
-          <Textarea
+          <MentionsInput
             value={message}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
+            placeholder="Type a message... Use @ to mention someone"
             className="chat-input resize-none rounded-xl border-border focus:ring-primary"
             rows={1}
           />
         </div>
+
+        <EmojiPicker onEmojiSelect={handleEmojiSelect}>
+          <Button variant="ghost" size="icon" className="rounded-xl">
+            <span className="text-lg">😊</span>
+          </Button>
+        </EmojiPicker>
 
         <Button
           variant="ghost"
