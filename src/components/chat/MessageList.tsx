@@ -4,20 +4,15 @@ import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { FileAudio, File, Pin, Forward, Edit, Trash2 } from 'lucide-react';
+import { FileAudio, File, Pin, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-  ContextMenuSeparator,
-} from '@/components/ui/context-menu';
 import MessageStatus from './MessageStatus';
 import TypingIndicator from './TypingIndicator';
 import PinnedMessages from './PinnedMessages';
 import ForwardMessageModal from './ForwardMessageModal';
+import MessageActions from './MessageActions';
+import ReplyInput from './ReplyInput';
 
 interface MessageListProps {
   chatId: string;
@@ -32,7 +27,9 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
     pinMessage,
     unpinMessage,
     editMessage,
-    deleteMessage
+    deleteMessage,
+    replyToMessage,
+    getMessageById
   } = useSocket();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -40,6 +37,11 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
   const [editContent, setEditContent] = useState('');
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
   const [messageToForward, setMessageToForward] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{
+    messageId: string;
+    content: string;
+    senderName: string;
+  } | null>(null);
 
   const chatMessages = messages.filter(msg => msg.chatId === chatId);
 
@@ -91,6 +93,21 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
     setEditContent(currentContent);
   };
 
+  const handleReplyToMessage = (messageId: string) => {
+    const message = getMessageById(messageId);
+    if (message) {
+      setReplyingTo({
+        messageId: message.id,
+        content: message.content,
+        senderName: message.senderName
+      });
+    }
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+  };
+
   const handleSaveEdit = (messageId: string) => {
     if (editContent.trim()) {
       editMessage(messageId, editContent.trim());
@@ -102,6 +119,22 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
   const handleCancelEdit = () => {
     setEditingMessageId(null);
     setEditContent('');
+  };
+
+  const renderReplyContext = (replyTo: any) => {
+    return (
+      <div className="mb-2 p-2 bg-muted/20 rounded border-l-2 border-primary">
+        <div className="flex items-center gap-2 mb-1">
+          <Reply className="h-3 w-3 text-muted-foreground" />
+          <span className="text-xs font-medium text-primary">
+            {replyTo.senderName}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground truncate">
+          {replyTo.content}
+        </p>
+      </div>
+    );
   };
 
   const renderMessageContent = (message: any) => {
@@ -158,6 +191,7 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
       default:
         return (
           <div>
+            {message.replyTo && renderReplyContext(message.replyTo)}
             {message.forwardedFrom && (
               <div className="text-xs text-muted-foreground mb-1 p-2 bg-muted/20 rounded border-l-2 border-primary">
                 Forwarded from {message.forwardedFrom.originalSender} • {' '}
@@ -178,84 +212,75 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
           const isOwn = message.senderId === user?.id;
           
           return (
-            <ContextMenu key={message.id}>
-              <ContextMenuTrigger>
-                <div 
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'} message-animation`}
-                  data-message-id={message.id}
-                >
-                  <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                    {!isOwn && (
-                      <Avatar className="h-8 w-8 mt-1">
-                        <AvatarImage src={`https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face`} />
-                        <AvatarFallback>{message.senderName[0]}</AvatarFallback>
-                      </Avatar>
-                    )}
-                    
-                    <div className={`space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
-                      {!isOwn && (
-                        <span className="text-xs text-muted-foreground px-2">{message.senderName}</span>
+            <div 
+              key={message.id}
+              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} message-animation group`}
+              data-message-id={message.id}
+            >
+              <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                {!isOwn && (
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarImage src={`https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face`} />
+                    <AvatarFallback>{message.senderName[0]}</AvatarFallback>
+                  </Avatar>
+                )}
+                
+                <div className={`space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
+                  {!isOwn && (
+                    <span className="text-xs text-muted-foreground px-2">{message.senderName}</span>
+                  )}
+                  <div className="relative">
+                    <Card className={`
+                      p-3 rounded-2xl max-w-xs break-words border-0 relative
+                      ${isOwn 
+                        ? `bg-slate-700 dark:bg-slate-700 text-white ${message.isDeleted ? 'opacity-60' : ''}` 
+                        : `bg-blue-50 dark:bg-slate-800 text-foreground ${message.isDeleted ? 'opacity-60' : ''}`
+                      }
+                    `}>
+                      {message.isPinned && (
+                        <Pin className="absolute -top-1 -right-1 h-3 w-3 text-primary" />
                       )}
-                      <Card className={`
-                        p-3 rounded-2xl max-w-xs break-words border-0 relative
-                        ${isOwn 
-                          ? `bg-slate-700 dark:bg-slate-700 text-white ${message.isDeleted ? 'opacity-60' : ''}` 
-                          : `bg-blue-50 dark:bg-slate-800 text-foreground ${message.isDeleted ? 'opacity-60' : ''}`
-                        }
-                      `}>
-                        {message.isPinned && (
-                          <Pin className="absolute -top-1 -right-1 h-3 w-3 text-primary" />
-                        )}
-                        {renderMessageContent(message)}
-                      </Card>
-                      <div className={`flex gap-2 items-center px-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {message.isEdited && <span className="ml-1">(edited)</span>}
-                        </span>
-                        <MessageStatus 
-                          status={message.status} 
-                          isOwn={isOwn} 
-                          readReceiptsEnabled={readReceiptsEnabled}
-                        />
-                      </div>
+                      {renderMessageContent(message)}
+                    </Card>
+                    <div className={`absolute top-2 ${isOwn ? '-left-10' : '-right-10'}`}>
+                      <MessageActions
+                        messageId={message.id}
+                        isPinned={message.isPinned || false}
+                        isOwn={isOwn}
+                        isDeleted={message.isDeleted || false}
+                        onReply={() => handleReplyToMessage(message.id)}
+                        onPin={() => handlePinMessage(message.id, message.isPinned || false)}
+                        onEdit={() => handleEditMessage(message.id, message.content)}
+                        onDelete={() => deleteMessage(message.id)}
+                        onForward={() => handleForwardMessage(message.id)}
+                      />
                     </div>
                   </div>
+                  <div className={`flex gap-2 items-center px-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {message.isEdited && <span className="ml-1">(edited)</span>}
+                    </span>
+                    <MessageStatus 
+                      status={message.status} 
+                      isOwn={isOwn} 
+                      readReceiptsEnabled={readReceiptsEnabled}
+                    />
+                  </div>
                 </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem onClick={() => handlePinMessage(message.id, message.isPinned || false)}>
-                  <Pin className="mr-2 h-4 w-4" />
-                  {message.isPinned ? 'Unpin' : 'Pin'} Message
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleForwardMessage(message.id)}>
-                  <Forward className="mr-2 h-4 w-4" />
-                  Forward
-                </ContextMenuItem>
-                {isOwn && !message.isDeleted && (
-                  <>
-                    <ContextMenuSeparator />
-                    <ContextMenuItem onClick={() => handleEditMessage(message.id, message.content)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </ContextMenuItem>
-                    <ContextMenuItem 
-                      onClick={() => deleteMessage(message.id)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </ContextMenuItem>
-                  </>
-                )}
-              </ContextMenuContent>
-            </ContextMenu>
+              </div>
+            </div>
           );
         })}
         
         <TypingIndicator chatId={chatId} typingUsers={typingUsers} />
         <div ref={messagesEndRef} />
       </div>
+
+      <ReplyInput
+        replyingTo={replyingTo}
+        onCancelReply={handleCancelReply}
+      />
 
       <ForwardMessageModal
         isOpen={forwardModalOpen}

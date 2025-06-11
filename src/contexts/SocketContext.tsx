@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface MessageStatus {
@@ -20,6 +19,11 @@ interface Message {
   isPinned?: boolean;
   isEdited?: boolean;
   isDeleted?: boolean;
+  replyTo?: {
+    messageId: string;
+    content: string;
+    senderName: string;
+  };
   forwardedFrom?: {
     originalSender: string;
     originalTimestamp: Date;
@@ -49,6 +53,8 @@ interface SocketContextType {
   editMessage: (messageId: string, newContent: string) => void;
   deleteMessage: (messageId: string) => void;
   getPinnedMessages: (chatId: string) => Message[];
+  replyToMessage: (originalMessageId: string, content: string, chatId: string) => void;
+  getMessageById: (messageId: string) => Message | undefined;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -207,6 +213,37 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     return messages.filter(msg => msg.chatId === chatId && msg.isPinned && !msg.isDeleted);
   };
 
+  const replyToMessage = (originalMessageId: string, content: string, chatId: string) => {
+    const originalMessage = messages.find(msg => msg.id === originalMessageId);
+    if (!originalMessage) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      senderId: 'user1',
+      senderName: 'You',
+      content,
+      type: 'text',
+      timestamp: new Date(),
+      chatId,
+      status: { sent: true, delivered: false, read: false },
+      replyTo: {
+        messageId: originalMessage.id,
+        content: originalMessage.content,
+        senderName: originalMessage.senderName
+      }
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    
+    setTimeout(() => {
+      updateMessageStatus(newMessage.id, { delivered: true });
+    }, 1000);
+  };
+
+  const getMessageById = (messageId: string) => {
+    return messages.find(msg => msg.id === messageId);
+  };
+
   return (
     <SocketContext.Provider value={{ 
       messages, 
@@ -223,9 +260,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       forwardMessage,
       editMessage,
       deleteMessage,
-      getPinnedMessages
+      getPinnedMessages,
+      replyToMessage,
+      getMessageById
     }}>
       {children}
     </SocketContext.Provider>
   );
 };
+
+export default SocketProvider;
