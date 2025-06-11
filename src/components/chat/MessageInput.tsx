@@ -1,11 +1,13 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Mic, File } from 'lucide-react';
+import { Send, Mic, File, Settings } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface MessageInputProps {
   chatId: string;
@@ -14,13 +16,20 @@ interface MessageInputProps {
 const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const { sendMessage } = useSocket();
+  const { sendMessage, setTyping, readReceiptsEnabled, setReadReceiptsEnabled } = useSocket();
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
+
+    // Clear typing indicator
+    setTyping(chatId, false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
 
     sendMessage({
       senderId: user?.id || '',
@@ -33,12 +42,47 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
     setMessage('');
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+
+    // Handle typing indicator
+    if (value.trim()) {
+      setTyping(chatId, true);
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set new timeout to stop typing indicator
+      typingTimeoutRef.current = setTimeout(() => {
+        setTyping(chatId, false);
+      }, 2000);
+    } else {
+      setTyping(chatId, false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
+
+  useEffect(() => {
+    return () => {
+      // Cleanup typing indicator on unmount
+      setTyping(chatId, false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [chatId, setTyping]);
 
   const handleVoiceRecord = () => {
     if (!isRecording) {
@@ -108,7 +152,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
         <div className="flex-1">
           <Textarea
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
             className="chat-input resize-none rounded-xl border-border focus:ring-primary"
@@ -124,6 +168,37 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId }) => {
         >
           <Mic className="h-4 w-4" />
         </Button>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-xl">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="end">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Message Settings</h4>
+                <p className="text-sm text-muted-foreground">
+                  Configure your messaging preferences
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="read-receipts" className="text-sm font-normal">
+                  Read receipts
+                </Label>
+                <Switch
+                  id="read-receipts"
+                  checked={readReceiptsEnabled}
+                  onCheckedChange={setReadReceiptsEnabled}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                When enabled, others can see when you've read their messages, and you can see when they've read yours.
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <Button
           onClick={handleSendMessage}

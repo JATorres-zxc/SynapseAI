@@ -5,13 +5,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { FileAudio, File } from 'lucide-react';
+import MessageStatus from './MessageStatus';
+import TypingIndicator from './TypingIndicator';
 
 interface MessageListProps {
   chatId: string;
 }
 
 const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
-  const { messages } = useSocket();
+  const { messages, typingUsers, updateMessageStatus, readReceiptsEnabled } = useSocket();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -19,7 +21,33 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+  }, [chatMessages, typingUsers]);
+
+  // Simulate marking messages as read when they come into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.getAttribute('data-message-id');
+            const message = chatMessages.find(msg => msg.id === messageId);
+            
+            if (message && message.senderId !== user?.id && readReceiptsEnabled && !message.status?.read) {
+              setTimeout(() => {
+                updateMessageStatus(messageId!, { read: true, readBy: [user?.username || 'You'] });
+              }, 1000);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const messageElements = document.querySelectorAll('[data-message-id]');
+    messageElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [chatMessages, user?.id, updateMessageStatus, readReceiptsEnabled]);
 
   const renderMessageContent = (message: any) => {
     switch (message.type) {
@@ -48,7 +76,11 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
         const isOwn = message.senderId === user?.id;
         
         return (
-          <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} message-animation`}>
+          <div 
+            key={message.id} 
+            className={`flex ${isOwn ? 'justify-end' : 'justify-start'} message-animation`}
+            data-message-id={message.id}
+          >
             <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
               {!isOwn && (
                 <Avatar className="h-8 w-8 mt-1">
@@ -70,14 +102,23 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
                 `}>
                   {renderMessageContent(message)}
                 </Card>
-                <span className="text-xs text-muted-foreground px-2">
-                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div className={`flex gap-2 items-center px-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <MessageStatus 
+                    status={message.status} 
+                    isOwn={isOwn} 
+                    readReceiptsEnabled={readReceiptsEnabled}
+                  />
+                </div>
               </div>
             </div>
           </div>
         );
       })}
+      
+      <TypingIndicator chatId={chatId} typingUsers={typingUsers} />
       <div ref={messagesEndRef} />
     </div>
   );
