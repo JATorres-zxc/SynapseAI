@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -18,28 +17,36 @@ interface SearchModalProps {
   currentChatId: string;
 }
 
-interface SearchResult {
+type MessageResult = {
   id: string;
-  type: 'message' | 'user';
+  type: 'message';
   content: string;
-  sender?: string;
-  timestamp?: Date;
-  chatId?: string;
-  chatName?: string;
-  avatar?: string;
-  username?: string;
-  email?: string;
-}
+  sender: string;
+  timestamp: Date;
+  chatId: string;
+  chatName: string;
+};
+
+type UserResult = {
+  id: string;
+  type: 'user';
+  username: string;
+  email: string;
+  avatar: string;
+  displayName: string;
+};
+
+type SearchResult = MessageResult | UserResult;
 
 const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatId }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('messages');
+  const [activeTab, setActiveTab] = useState<'messages' | 'users'>('messages');
   const [dateFilter, setDateFilter] = useState<Date>();
   const [showFilters, setShowFilters] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
 
   // Mock data for demonstration
-  const mockMessageResults: SearchResult[] = [
+  const mockMessageResults: MessageResult[] = [
     {
       id: '1',
       type: 'message',
@@ -60,20 +67,22 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
     }
   ];
 
-  const mockUserResults: SearchResult[] = [
+  const mockUserResults: UserResult[] = [
     {
       id: '1',
       type: 'user',
       username: 'john_doe',
       email: 'john@example.com',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      displayName: 'John Doe'
     },
     {
       id: '2',
       type: 'user',
       username: 'sarah_wilson',
       email: 'sarah@example.com',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face'
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face',
+      displayName: 'Sarah Wilson'
     }
   ];
 
@@ -86,13 +95,14 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
     if (activeTab === 'messages') {
       const filtered = mockMessageResults.filter(result =>
         result.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        result.sender?.toLowerCase().includes(searchQuery.toLowerCase())
+        result.sender.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setResults(filtered);
     } else {
       const filtered = mockUserResults.filter(result =>
-        result.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        result.email?.toLowerCase().includes(searchQuery.toLowerCase())
+        result.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.displayName.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setResults(filtered);
     }
@@ -110,6 +120,10 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
         </mark>
       ) : part
     );
+  };
+
+  const isMessageResult = (result: SearchResult): result is MessageResult => {
+    return result.type === 'message';
   };
 
   return (
@@ -183,8 +197,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
           )}
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-accent rounded-xl">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={(value: string) => setActiveTab(value as 'messages' | 'users')}
+              className="w-full"
+            >            
+              <TabsList className="grid w-full grid-cols-2 bg-accent rounded-xl">
               <TabsTrigger value="messages" className="rounded-xl">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Messages
@@ -207,12 +225,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
                     Enter a search term to find messages
                   </div>
                 ) : (
-                  results.map((result) => (
+                  results.filter(isMessageResult).map((result) => (
                     <Card key={result.id} className="p-3 cursor-pointer hover:bg-accent transition-colors">
                       <div className="flex items-start gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" />
-                          <AvatarFallback>{result.sender?.[0]}</AvatarFallback>
+                          <AvatarFallback>{result.sender[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
@@ -222,7 +240,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
                                 {result.chatName}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {result.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {result.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                           </div>
@@ -249,19 +267,19 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentChatI
                     Enter a search term to find users
                   </div>
                 ) : (
-                  results.map((result) => (
+                  results.filter((result): result is UserResult => result.type === 'user').map((result) => (
                     <Card key={result.id} className="p-3 cursor-pointer hover:bg-accent transition-colors">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={result.avatar} />
-                          <AvatarFallback>{result.username?.[0]?.toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{result.username[0]?.toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium">
-                            {highlightText(result.username || '', searchQuery)}
+                            {highlightText(result.username, searchQuery)}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {highlightText(result.email || '', searchQuery)}
+                            {highlightText(result.email, searchQuery)}
                           </p>
                         </div>
                         <Button size="sm" variant="outline" className="rounded-xl">
