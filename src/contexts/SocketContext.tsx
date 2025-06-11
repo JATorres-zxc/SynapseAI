@@ -17,6 +17,14 @@ interface Message {
   timestamp: Date;
   chatId: string;
   status?: MessageStatus;
+  isPinned?: boolean;
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  forwardedFrom?: {
+    originalSender: string;
+    originalTimestamp: Date;
+    originalChatId: string;
+  };
 }
 
 interface TypingIndicator {
@@ -35,6 +43,12 @@ interface SocketContextType {
   updateMessageStatus: (messageId: string, status: Partial<MessageStatus>) => void;
   readReceiptsEnabled: boolean;
   setReadReceiptsEnabled: (enabled: boolean) => void;
+  pinMessage: (messageId: string) => void;
+  unpinMessage: (messageId: string) => void;
+  forwardMessage: (messageId: string, targetChatId: string) => void;
+  editMessage: (messageId: string, newContent: string) => void;
+  deleteMessage: (messageId: string) => void;
+  getPinnedMessages: (chatId: string) => Message[];
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -73,7 +87,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         type: 'text',
         timestamp: new Date(Date.now() - 3600000),
         chatId: 'chat1',
-        status: { sent: true, delivered: true, read: true, readBy: ['user1'] }
+        status: { sent: true, delivered: true, read: true, readBy: ['user1'] },
+        isPinned: true
       },
       {
         id: '2',
@@ -105,12 +120,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       updateMessageStatus(newMessage.id, { delivered: true });
     }, 1000);
     
-    // TODO: Emit to actual socket server
     console.log('Sending message:', newMessage);
   };
 
   const setTyping = (chatId: string, isTyping: boolean) => {
-    const userId = 'user1'; // Current user ID
+    const userId = 'user1';
     const userName = 'You';
     
     if (isTyping) {
@@ -134,6 +148,65 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     ));
   };
 
+  const pinMessage = (messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, isPinned: true } : msg
+    ));
+  };
+
+  const unpinMessage = (messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, isPinned: false } : msg
+    ));
+  };
+
+  const forwardMessage = (messageId: string, targetChatId: string) => {
+    const messageToForward = messages.find(msg => msg.id === messageId);
+    if (!messageToForward) return;
+
+    const forwardedMessage: Message = {
+      id: Date.now().toString(),
+      senderId: 'user1', // Current user
+      senderName: 'You',
+      content: messageToForward.content,
+      type: messageToForward.type,
+      timestamp: new Date(),
+      chatId: targetChatId,
+      status: { sent: true, delivered: false, read: false },
+      forwardedFrom: {
+        originalSender: messageToForward.senderName,
+        originalTimestamp: messageToForward.timestamp,
+        originalChatId: messageToForward.chatId
+      }
+    };
+
+    setMessages(prev => [...prev, forwardedMessage]);
+    
+    setTimeout(() => {
+      updateMessageStatus(forwardedMessage.id, { delivered: true });
+    }, 1000);
+  };
+
+  const editMessage = (messageId: string, newContent: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, content: newContent, isEdited: true }
+        : msg
+    ));
+  };
+
+  const deleteMessage = (messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, isDeleted: true, content: 'This message was deleted' }
+        : msg
+    ));
+  };
+
+  const getPinnedMessages = (chatId: string) => {
+    return messages.filter(msg => msg.chatId === chatId && msg.isPinned && !msg.isDeleted);
+  };
+
   return (
     <SocketContext.Provider value={{ 
       messages, 
@@ -144,7 +217,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setTyping, 
       updateMessageStatus,
       readReceiptsEnabled,
-      setReadReceiptsEnabled
+      setReadReceiptsEnabled,
+      pinMessage,
+      unpinMessage,
+      forwardMessage,
+      editMessage,
+      deleteMessage,
+      getPinnedMessages
     }}>
       {children}
     </SocketContext.Provider>
