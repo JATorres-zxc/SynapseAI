@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,14 @@ import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User, Search, Bot } from
 import ProfileModal from '@/components/ProfileModal';
 import SearchModal from '@/components/search/SearchModal';
 import ChatbotModal from '@/components/chat/ChatbotModal';
+import axios from 'axios';
+
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  createdAt: string;
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,13 +32,32 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showChatbotModal, setShowChatbotModal] = useState(false);
+  const [allUsers, setAllUsers] = useState<User[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const mockChats = [
-    { id: 'chat1', name: 'John Doe', lastMessage: 'Hey there!', type: 'direct', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
-    { id: 'chat2', name: 'Work Team', lastMessage: 'Meeting at 3pm', type: 'group', avatar: null },
-    { id: 'chat3', name: 'Sarah Wilson', lastMessage: 'Thanks for the help!', type: 'direct', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face' },
-    { id: 'chat4', name: 'Project Alpha', lastMessage: 'New updates available', type: 'group', avatar: null },
-  ];
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get<User[]>('/api/users');
+        console.log('API Response:', response);
+        setAllUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setAllUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleUserSelect = (userId: string) => {
+    // Here you can implement what happens when a user is selected
+    // For now, we'll just pass the user ID to onChatSelect
+    onChatSelect(userId);
+    if (isMobile) onClose();
+  };
 
   if (isMobile && !isOpen) return null;
 
@@ -47,10 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
         h-full w-80 bg-card border-r border-border flex flex-col
         ${isMobile && isOpen ? 'animate-slide-in' : ''}
       `}>
-        {/* Header */}
+        {/* Header - unchanged */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-primary">ChatApp</h1>
+            <h1 className="text-2xl font-bold text-primary">Synapse</h1>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -108,51 +135,45 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
           </Button>
         </div>
 
-        {/* Chats List */}
+        {/* Users List */}
         <div className="flex-1 overflow-y-auto scrollbar-hide p-4 pt-0">
-          <div className="space-y-2">
-            {mockChats.map((chat) => (
-              <Card
-                key={chat.id}
-                className={`p-3 cursor-pointer transition-all duration-200 hover:bg-accent ${
-                  selectedChatId === chat.id ? 'bg-primary text-primary-foreground' : ''
-                }`}
-                onClick={() => {
-                  onChatSelect(chat.id);
-                  if (isMobile) onClose();
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    {chat.avatar ? (
+          {allUsers === null ? (
+            <div className="flex justify-center items-center h-full">
+              <p>Loading users...</p>
+            </div>
+          ) : allUsers?.length === 0 ? (
+            <div className="flex justify-center items-center h-full">
+              <p>No users found</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {allUsers?.map((user) => (
+                <Card
+                  key={user._id}
+                  className={`p-3 cursor-pointer transition-all duration-200 hover:bg-accent ${
+                    selectedChatId === user._id ? 'bg-primary text-primary-foreground' : ''
+                  }`}
+                  onClick={() => handleUserSelect(user._id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={chat.avatar} />
-                        <AvatarFallback>{chat.name[0]}</AvatarFallback>
+                        <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
-                    ) : (
-                      <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
-                        {chat.type === 'group' ? (
-                          <Users className="h-6 w-6 text-primary" />
-                        ) : (
-                          <MessageSquare className="h-6 w-6 text-primary" />
-                        )}
-                      </div>
-                    )}
-                    {chat.type === 'direct' && (
                       <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background"></div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium truncate">{chat.name}</p>
-                      <span className="text-xs text-muted-foreground">2m</span>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium truncate">{user.username}</p>
+                        {/* You could show last active time here if you add that field */}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Chatbot Button */}
