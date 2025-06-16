@@ -3,10 +3,11 @@ import ChatHeader from './ChatHeader';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import { User } from '@/types/user';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatAreaProps {
   chatId: string;
-  selectedUser: User | null; // Add this prop
+  selectedUser: User | null;
   onMenuClick: () => void;
   isSidebarOpen: boolean;
 }
@@ -17,16 +18,29 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onMenuClick, 
   isSidebarOpen 
 }) => {
+  const { user } = useAuth(); // <-- ✅ Get current user from context
+
+  if (!selectedUser || !user) {
+    return <div className="p-4">Select a chat to start messaging.</div>;
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full">
       <ChatHeader 
         chatId={chatId}
-        selectedUser={selectedUser} // Pass it down
+        selectedUser={selectedUser}
         onMenuClick={onMenuClick} 
       />
-      <MessageList chatId={chatId} />
-      <MessageInput chatId={chatId} />
-    </div>
+      <MessageList 
+        userId={selectedUser._id} 
+        currentUserId={user._id} 
+      />
+      <MessageInput 
+        chatId={chatId} 
+        currentUserId={user._id} 
+        recipientId={selectedUser._id}
+      />    
+</div>
   );
 };
 
