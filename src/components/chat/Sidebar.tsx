@@ -5,24 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User, Search, Bot } from 'lucide-react';
+import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User as UserIcon, Search, Bot } from 'lucide-react';
 import ProfileModal from '@/components/ProfileModal';
 import SearchModal from '@/components/search/SearchModal';
 import ChatbotModal from '@/components/chat/ChatbotModal';
 import axios from 'axios';
-
-interface User {
-  _id: string;
-  username: string;
-  email: string;
-  createdAt: string;
-}
+import { User } from '@/types/user';
+// interface User {
+//   _id: string;
+//   username: string;
+//   email: string;
+//   createdAt: string;
+// }
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   selectedChatId: string;
-  onChatSelect: (chatId: string) => void;
+  onChatSelect: (chatId: string, user: User | null) => void; // Updated
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onChatSelect }) => {
@@ -53,9 +53,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   }, []);
 
   const handleUserSelect = (userId: string) => {
-    // Here you can implement what happens when a user is selected
-    // For now, we'll just pass the user ID to onChatSelect
-    onChatSelect(userId);
+    const selectedUser = allUsers?.find(user => user._id === userId) || null;
+    onChatSelect(userId, selectedUser); // Update this to pass the user object
     if (isMobile) onClose();
   };
 
@@ -93,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
                 onClick={() => setShowProfileModal(true)}
                 className="rounded-xl"
               >
-                <User className="h-4 w-4" />
+                <UserIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
