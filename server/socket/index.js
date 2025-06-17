@@ -17,12 +17,14 @@ module.exports = (io) => {
         const { sender, recipient, content } = data;
         
         // Save to database
-        const message = new Message({
+        let message = new Message({
           sender,
           recipient,
           content
         });
         await message.save();
+
+        message = await message.populate('sender', 'username');
 
         // Emit to recipient
         io.to(recipient).emit('receiveMessage', message);

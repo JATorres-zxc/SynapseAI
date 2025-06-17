@@ -37,12 +37,16 @@ const MessageList: React.FC<MessageListProps> = ({ userId, currentUserId }) => {
     if (socket) {
       socket.emit('joinConversation', currentUserId);
 
-      socket.on('receiveMessage', (message: Message) => {
+      const handleIncomingMessage = (message: Message) => {
         setMessages((prev) => [...prev, message]);
-      });
+      };
+
+      socket.on('receiveMessage', handleIncomingMessage);
+      socket.on('messageSent', handleIncomingMessage);
 
       return () => {
-        socket.off('receiveMessage');
+        socket.off('receiveMessage', handleIncomingMessage);
+        socket.off('messageSent', handleIncomingMessage);
       };
     }
   }, [currentUserId, socket]);
