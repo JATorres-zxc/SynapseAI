@@ -35,7 +35,7 @@ const MessageList: React.FC<MessageListProps> = ({ userId, currentUserId }) => {
 
     // Socket.IO listeners
     if (socket) {
-      socket.emit('joinConversation', userId);
+      socket.emit('joinConversation', currentUserId);
 
       socket.on('receiveMessage', (message: Message) => {
         setMessages((prev) => [...prev, message]);
@@ -45,7 +45,7 @@ const MessageList: React.FC<MessageListProps> = ({ userId, currentUserId }) => {
         socket.off('receiveMessage');
       };
     }
-  }, [userId, socket]);
+  }, [currentUserId, socket]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
