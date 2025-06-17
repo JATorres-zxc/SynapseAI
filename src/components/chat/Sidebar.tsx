@@ -11,6 +11,7 @@ import SearchModal from '@/components/search/SearchModal';
 import ChatbotModal from '@/components/chat/ChatbotModal';
 import axios from 'axios';
 import { User } from '@/types/user';
+import { initSocket } from '@/lib/socket';
 // interface User {
 //   _id: string;
 //   username: string;
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const [showChatbotModal, setShowChatbotModal] = useState(false);
   const [allUsers, setAllUsers] = useState<User[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -50,7 +52,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
     };
 
     fetchUsers();
-  }, []);
+
+    // Only initialize socket if user is ready
+    if (!user?._id) return;
+
+    const newSocket = initSocket(user._id);
+    newSocket.emit('getOnlineUsers');
+
+    newSocket.on('onlineUsers', (onlineUserIds: string[]) => {
+      setOnlineUsers(onlineUserIds);
+    });
+
+    return () => {
+      newSocket.disconnect(); // Clean up connection on unmount
+    };
+  }, [user?._id]);
 
   const handleUserSelect = (userId: string) => {
     const selectedUser = allUsers?.find(user => user._id === userId) || null;
@@ -146,31 +162,39 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
             </div>
           ) : (
             <div className="space-y-2">
-              {allUsers?.map((user) => (
-                <Card
-                  key={user._id}
-                  className={`p-3 cursor-pointer transition-all duration-200 hover:bg-accent ${
-                    selectedChatId === user._id ? 'bg-primary text-primary-foreground' : ''
-                  }`}
-                  onClick={() => handleUserSelect(user._id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background"></div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium truncate">{user.username}</p>
-                        {/* You could show last active time here if you add that field */}
+              {allUsers?.map((user) => {
+                const isOnline = onlineUsers.includes(user._id);
+
+                return (
+                  <Card
+                    key={user._id}
+                    className={`p-3 cursor-pointer transition-all duration-200 hover:bg-accent ${
+                      selectedChatId === user._id ? 'bg-primary text-primary-foreground' : ''
+                    }`}
+                    onClick={() => handleUserSelect(user._id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div
+                          className={`
+                            absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background
+                            ${isOnline ? 'bg-green-500' : 'bg-gray-400'}
+                          `}
+                        />
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium truncate">{user.username}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

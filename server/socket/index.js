@@ -1,9 +1,20 @@
-// socket/index.js
 const Message = require('../models/Message');
+
+// Use a Set to store online user IDs
+const onlineUsers = new Set();
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
-    console.log('New client connected:', socket.id);
+    const userId = socket.handshake.query.userId;
+    console.log('New client connected:', socket.id, 'User:', userId);
+
+    if (userId) {
+      socket.userId = userId;
+      onlineUsers.add(userId);
+
+      // Notify all clients of updated online users
+      io.emit('onlineUsers', Array.from(onlineUsers));
+    }
 
     // Join a conversation
     socket.on('joinConversation', (conversationId) => {
@@ -15,8 +26,7 @@ module.exports = (io) => {
     socket.on('sendMessage', async (data) => {
       try {
         const { sender, recipient, content } = data;
-        
-        // Save to database
+
         let message = new Message({
           sender,
           recipient,
@@ -26,10 +36,8 @@ module.exports = (io) => {
 
         message = await message.populate('sender', 'username');
 
-        // Emit to recipient
         io.to(recipient).emit('receiveMessage', message);
         io.to(sender).emit('messageSent', message);
-        
       } catch (error) {
         console.error('Error sending message:', error);
       }
@@ -51,8 +59,18 @@ module.exports = (io) => {
       }
     });
 
+    // Handle manual request for online users
+    socket.on('getOnlineUsers', () => {
+      socket.emit('onlineUsers', Array.from(onlineUsers));
+    });
+
+    // Handle disconnect
     socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
+      if (socket.userId) {
+        onlineUsers.delete(socket.userId);
+        io.emit('onlineUsers', Array.from(onlineUsers));
+        console.log('Client disconnected:', socket.id, 'User:', socket.userId);
+      }
     });
   });
 };
