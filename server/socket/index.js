@@ -25,12 +25,13 @@ module.exports = (io) => {
     // Send and save message
     socket.on('sendMessage', async (data) => {
       try {
-        const { sender, recipient, content } = data;
+        const { sender, recipient, content, file } = data;
 
         let message = new Message({
           sender,
           recipient,
-          content
+          content,
+          file
         });
         await message.save();
 

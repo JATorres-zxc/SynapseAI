@@ -14,8 +14,14 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
-    trim: true
+    trim: true,
+    default: ''
+  },
+  file: {
+    url: String,
+    filename: String,
+    fileType: String, // 'image' or 'pdf'
+    size: Number
   },
   read: {
     type: Boolean,
