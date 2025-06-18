@@ -10,15 +10,21 @@ interface ChatAreaProps {
   selectedUser: User | null;
   onMenuClick: () => void;
   isSidebarOpen: boolean;
+  onlineUsers: string[];
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({ 
   chatId, 
   selectedUser, 
   onMenuClick, 
-  isSidebarOpen 
+  isSidebarOpen, 
+  onlineUsers
 }) => {
   const { user } = useAuth(); // <-- ✅ Get current user from context
+
+  const isSelectedUserOnline = selectedUser
+    ? onlineUsers.includes(selectedUser._id)
+    : false;
 
   if (!selectedUser || !user) {
     return <div className="p-4">Select a chat to start messaging.</div>;
@@ -30,6 +36,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         chatId={chatId}
         selectedUser={selectedUser}
         onMenuClick={onMenuClick} 
+        isOnline={isSelectedUserOnline}
       />
       <MessageList 
         userId={selectedUser._id} 

@@ -9,12 +9,14 @@ interface ChatHeaderProps {
   chatId: string;
   selectedUser: User | null;
   onMenuClick: () => void;
+  isOnline: boolean;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ 
   chatId, 
   selectedUser, 
-  onMenuClick 
+  onMenuClick, 
+  isOnline
 }) => {
   const isMobile = useIsMobile();
 
@@ -37,7 +39,12 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               {selectedUser?.username?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background"></div>
+          <div
+            className={`
+              absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background
+              ${isOnline ? 'bg-green-500' : 'bg-gray-400'}
+            `}
+          />
         </div>
         <div>
           <h2 className="font-semibold">
