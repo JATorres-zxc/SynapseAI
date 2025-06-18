@@ -27,7 +27,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     : false;
 
   if (!selectedUser || !user) {
-    return <div className="p-4">Select a chat to start messaging.</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full text-center px-4 animate-fadeIn bg-muted">
+        <div className="text-5xl mb-4 text-muted-foreground">
+          💬
+        </div>
+        <h2 className="text-xl font-medium text-foreground mb-1">
+          No chat selected
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Select a conversation to start messaging.
+        </p>
+      </div>
+    );
   }
 
   return (
