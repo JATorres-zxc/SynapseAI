@@ -76,6 +76,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
 
   if (isMobile && !isOpen) return null;
 
+  const handleStartChat = async (userId: string) => {
+    try {
+      // 1. Find or create a chat with this user
+      const response = await axios.post('/api/chats', {
+        recipientId: userId
+      });
+
+      // 2. Navigate to the chat
+      const selectedUser = allUsers?.find(user => user._id === userId) || null;
+      onChatSelect(response.data._id, selectedUser);
+      
+      // 3. Close sidebar on mobile
+      if (isMobile) onClose();
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      // Handle error (show toast, etc.)
+    }
+  };
+
   return (
     <>
       {isMobile && isOpen && (
@@ -220,7 +239,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
       <SearchModal
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
-        currentChatId={selectedChatId}
+        currentUserId={user?._id} // If you need this
+        currentChatId={selectedChatId} // Changed from currentChatId to currentUserId if needed
+        onStartChat={handleStartChat}
       />
 
       <ChatbotModal

@@ -9,7 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const mime = require('mime-types');
-
+const chatRoutes = require('./routes/chatRoutes');
 const app = express();
 const httpServer = createServer(app);
 const path = require('path');
@@ -70,7 +70,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     res.setHeader('Content-Type', contentType);
   }
 }));
-
+app.use('/api/chats', chatRoutes);
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -12,9 +12,11 @@ interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUserId: string;
+  currentChatId?: string;
+  onStartChat: (userId: string) => void;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentUserId }) => {
+const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentUserId, currentChatId, onStartChat }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'messages' | 'users'>('users');
   const [users, setUsers] = useState<UserType[]>([]);
@@ -159,7 +161,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentUserI
                           variant="outline" 
                           className="rounded-xl"
                           onClick={() => {
-                            // Add your start chat logic here
+                            onStartChat(user._id);
+                            onClose();
                             console.log('Start chat with', user._id);
                           }}
                         >
