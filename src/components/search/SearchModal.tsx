@@ -112,12 +112,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentUserI
           </div>
 
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'messages' | 'users')}>
-            <TabsList className="grid w-full grid-cols-2 bg-accent rounded-xl">
+            {/* <TabsList className="grid w-full grid-cols-2 bg-accent rounded-xl">
               <TabsTrigger value="users" className="rounded-xl">
                 <User className="h-4 w-4 mr-2" />
                 Users
               </TabsTrigger>
-            </TabsList>
+            </TabsList> */}
 
             <TabsContent value="users" className="mt-4">
               {error ? (
