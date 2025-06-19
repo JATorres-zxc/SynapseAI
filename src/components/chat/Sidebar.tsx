@@ -163,7 +163,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
 
         {/* New Chat Button */}
         <div className="p-4">
-          <Button className="w-full rounded-xl" size="sm">
+          <Button 
+            className="w-full rounded-xl" 
+            size="sm"
+            onClick={() => setShowSearchModal(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Chat
           </Button>

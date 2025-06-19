@@ -30,7 +30,7 @@ const ChatbotModal: React.FC<ChatbotModalProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      content: 'Hello! I\'m your AI assistant. How can I help you today?',
+      content: 'Work in progress! This chatbot is a simple demo and does not have advanced AI capabilities yet.',
       sender: 'bot',
       timestamp: new Date(),
     },
