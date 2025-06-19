@@ -1,17 +1,13 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -19,26 +15,60 @@ interface ProfileModalProps {
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser, deactivateAccount } = useAuth();
   const [name, setName] = useState(user?.username || '');
-  const [status, setStatus] = useState('Online');
-  const [birthday, setBirthday] = useState<Date>();
   const [deactivateConfirmName, setDeactivateConfirmName] = useState('');
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { toast } = useToast();
 
-  const handleSaveProfile = () => {
-    // TODO: Implement profile update logic
-    console.log('Saving profile:', { name, status, birthday });
-    onClose();
+  const handleSaveProfile = async () => {
+    if (!name.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Name cannot be empty',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      await updateUser({ username: name });
+      toast({
+        title: 'Success',
+        description: 'Profile updated successfully',
+      });
+      onClose();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update profile',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleDeactivateAccount = () => {
+  const handleDeactivateAccount = async () => {
     if (deactivateConfirmName === user?.username) {
-      // TODO: Implement account deactivation logic
-      console.log('Deactivating account');
-      logout();
-      onClose();
-      setShowDeactivateDialog(false);
+      try {
+        await deactivateAccount();
+        toast({
+          title: 'Account Deactivated',
+          description: 'Your account has been deactivated',
+        });
+        logout();
+        onClose();
+        setShowDeactivateDialog(false);
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to deactivate account',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -70,54 +100,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
             />
           </div>
 
-          {/* Change Status */}
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder="Select your status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Online">🟢 Online</SelectItem>
-                <SelectItem value="Away">🟡 Away</SelectItem>
-                <SelectItem value="Do Not Disturb">🔴 Do Not Disturb</SelectItem>
-                <SelectItem value="Offline">⚫ Offline</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Birthday */}
-          <div className="space-y-2">
-            <Label>Birthday</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal rounded-xl",
-                    !birthday && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {birthday ? format(birthday, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={birthday}
-                  onSelect={setBirthday}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 pt-4">
-            <Button onClick={handleSaveProfile} className="rounded-xl">
-              Save Changes
+            <Button 
+              onClick={handleSaveProfile} 
+              className="rounded-xl"
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Saving...' : 'Save Changes'}
             </Button>
             
             {/* Deactivate Account */}
@@ -131,7 +121,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your account
+                    This action cannot be undone. This will permanently deactivate your account
                     and remove your data from our servers.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -157,7 +147,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     Cancel
                   </AlertDialogCancel>
                   <AlertDialogAction
-                    className="rounded-xl"
+                    className="rounded-xl bg-destructive hover:bg-destructive/90"
                     onClick={handleDeactivateAccount}
                     disabled={!canDeactivate}
                   >

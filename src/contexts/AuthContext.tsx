@@ -15,6 +15,8 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  updateUser: (userData: Partial<User>) => Promise<void>;
+  deactivateAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -95,8 +97,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/login');
   };
 
+  const updateUser = async (userData: Partial<User>) => {
+    try {
+      const response = await fetch('/api/users/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+        credentials: 'include',
+      });
+
+      // First check if the response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+      }
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update profile');
+      }
+
+      setUser(data.user);
+      return data;
+    } catch (error) {
+      console.error('Update error:', error);
+      throw new Error(error.message || 'Failed to update user');
+    }
+  };
+
+  const deactivateAccount = async () => {
+    try {
+      const response = await fetch('/api/auth/deactivate', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to deactivate account');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Deactivation error:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      register, 
+      logout, 
+      loading, 
+      updateUser, 
+      deactivateAccount 
+    }}>
       {children}
     </AuthContext.Provider>
   );
