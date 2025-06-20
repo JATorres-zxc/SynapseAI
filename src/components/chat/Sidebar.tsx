@@ -12,6 +12,7 @@ import ChatbotModal from '@/components/chat/ChatbotModal';
 import axios from 'axios';
 import { User } from '@/types/user';
 import { initSocket } from '@/lib/socket';
+import { HelpCircle } from 'lucide-react';
 // interface User {
 //   _id: string;
 //   username: string;
@@ -36,6 +37,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const [allUsers, setAllUsers] = useState<User[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [showHelpBubble, setShowHelpBubble] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -74,6 +77,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
     if (isMobile) onClose();
   };
 
+  useEffect(() => {
+    if (hasInteracted) return;
+
+    const bubbleInterval = setInterval(() => {
+      setShowHelpBubble(prev => !prev);
+    }, 6000); // 3s visible, 3s hidden
+
+    return () => clearInterval(bubbleInterval);
+  }, [hasInteracted]);
+
   if (isMobile && !isOpen) return null;
 
   const handleStartChat = async (userId: string) => {
@@ -95,6 +108,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
     }
   };
 
+  const handleHelpClick = () => {
+    setHasInteracted(true);
+    setShowHelpBubble(false);
+    console.log('Tour will start here');
+  };
+
   return (
     <>
       {isMobile && isOpen && (
@@ -111,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
         {/* Header - unchanged */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-primary">Synapse</h1>
+            <h1 className="text-2xl font-bold text-primary">SynapseAI</h1>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -223,16 +242,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
         </div>
 
         {/* Chatbot Button */}
-        <div className="p-4 border-t border-border">
-          <Button
-            variant="outline"
-            className="w-full rounded-xl"
-            onClick={() => setShowChatbotModal(true)}
-          >
-            <Bot className="h-4 w-4 mr-2" />
-            Chat with AI Assistant
-          </Button>
-        </div>
+        <div className="p-4 border-t border-border flex items-center gap-2">
+            <div className="relative">
+              {showHelpBubble && (
+                <div className="
+                  absolute -top-10 -translate-x-1/2 transform
+                  bg-foreground text-background text-xs px-3 py-1 rounded-md
+                  opacity-0 animate-pulse-bubble whitespace-nowrap
+                  before:content-[''] before:absolute before:top-full before:left-1/2 
+                  before:-translate-x-1/2 before:w-0 before:h-0 
+                  before:border-l-4 before:border-l-transparent
+                  before:border-r-4 before:border-r-transparent
+                  before:border-t-4 before:border-t-foreground
+                  shadow-md
+                ">
+                  Click me!
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full animate-bounce hover:animate-none border-2"
+                onClick={handleHelpClick}
+                aria-label="Help tour"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full rounded-xl flex-1"
+              onClick={() => setShowChatbotModal(true)}
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              Chat with AI Assistant
+            </Button>
+          </div>
       </div>
 
       <ProfileModal 

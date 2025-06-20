@@ -42,3 +42,12 @@
     opacity: 1;
   }
 }
+
+@keyframes pulse-bubble {
+  0%, 100% { opacity: 0; transform: translateY(5px); }
+  50% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pulse-bubble {
+  animation: pulse-bubble 3s ease-in-out infinite;
+}

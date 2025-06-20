@@ -41,7 +41,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-900 dark:to-slate-800 p-4">
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-primary">ChatApp</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">SynapseAI</CardTitle>
           <CardDescription>Sign in to start chatting</CardDescription>
         </CardHeader>
         <CardContent>
