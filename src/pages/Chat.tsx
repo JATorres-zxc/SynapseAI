@@ -5,6 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { User } from '@/types/user';
 import { initSocket } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
+import { setupTour } from '@/lib/tour';
 
 let socket: ReturnType<typeof initSocket>;
 
@@ -42,7 +43,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="h-screen flex bg-background" id="app-container">
       <Sidebar 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}

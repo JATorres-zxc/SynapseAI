@@ -13,6 +13,8 @@ import axios from 'axios';
 import { User } from '@/types/user';
 import { initSocket } from '@/lib/socket';
 import { HelpCircle } from 'lucide-react';
+import { setupTour } from '@/lib/tour';
+
 // interface User {
 //   _id: string;
 //   username: string;
@@ -111,7 +113,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const handleHelpClick = () => {
     setHasInteracted(true);
     setShowHelpBubble(false);
-    console.log('Tour will start here');
+    const tour = setupTour();
+    tour.drive();
   };
 
   return (
@@ -138,13 +141,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
                 onClick={() => setShowSearchModal(true)}
                 className="rounded-xl"
               >
-                <Search className="h-4 w-4" />
+                <Search className="h-4 w-4" id="search-bar"/>
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowProfileModal(true)}
                 className="rounded-xl"
+                id="update-profile-button"
               >
                 <UserIcon className="h-4 w-4" />
               </Button>
@@ -153,6 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
                 size="icon"
                 onClick={toggleTheme}
                 className="rounded-xl"
+                id="theme-toggle"
               >
                 {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
@@ -161,6 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
                 size="icon"
                 onClick={logout}
                 className="rounded-xl"
+                id="logout-button"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -168,7 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
           </div>
           
           {/* User Profile */}
-          <div className="flex items-center gap-3 p-3 bg-accent rounded-xl">
+          <div className="flex items-center gap-3 p-3 bg-accent rounded-xl" id="user-profile">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user?.avatar} />
               <AvatarFallback>{user?.username?.[0]?.toUpperCase()}</AvatarFallback>
@@ -186,6 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
             className="w-full rounded-xl" 
             size="sm"
             onClick={() => setShowSearchModal(true)}
+            id="new-chat-button"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Chat
@@ -193,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
         </div>
 
         {/* Users List */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 pt-0">
+        <div id="sidebar" className="flex-1 overflow-y-auto scrollbar-hide p-4 pt-0">
           {allUsers === null ? (
             <div className="flex justify-center items-center h-full">
               <p>Loading users...</p>
@@ -271,6 +278,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
             </div>
 
             <Button
+              id="chatbot-button"
               variant="outline"
               className="w-full rounded-xl flex-1"
               onClick={() => setShowChatbotModal(true)}

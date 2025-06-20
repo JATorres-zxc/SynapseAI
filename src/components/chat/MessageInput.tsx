@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { FilePlus2, X } from 'lucide-react';
 import axios from 'axios';
 import { FileAttachment } from '@/types/message';
-
+import { setupTour } from '@/lib/tour';
 interface MessageInputProps {
   chatId: string;
   currentUserId: string;
@@ -77,7 +77,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-border flex flex-col gap-2">
+    <form onSubmit={handleSubmit} className="p-4 border-t border-border flex flex-col gap-2" id="message-input">
       {file && (
         <div className="flex items-center justify-between bg-gray-100 p-2 rounded">
           <div className="flex items-center gap-2">

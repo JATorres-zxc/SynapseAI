@@ -1,0 +1,27 @@
+.driver-popover {
+  background-color: rgb(var(--card)) !important;
+  color: rgb(var(--foreground)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+}
+
+.driver-popover-title {
+  font-weight: 600;
+  color: rgb(var(--foreground)) !important;
+}
+
+.driver-popover-description {
+  color: rgb(var(--muted-foreground)) !important;
+}
+
+.driver-popover-arrow {
+  border-color: rgb(var(--card)) !important;
+}
+
+.driver-highlighted-element {
+  border: 2px solid rgb(var(--ring)) !important;
+}
+
+.driver-popover-close-btn {
+  z-index: 10000 !important;
+  color: rgb(var(--foreground)) !important;
+}
