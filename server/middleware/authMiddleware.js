@@ -5,7 +5,7 @@ const protect = async (req, res, next) => {
   let token;
   
   // Check for token in cookies
-  if (req.cookies && req.cookies.token) {
+  if (req.cookies?.token) {
     token = req.cookies.token;
   }
   
@@ -14,12 +14,8 @@ const protect = async (req, res, next) => {
   }
   
   try {
-    // Verify token
     const decoded = verifyToken(token);
-    
-    // Get user from the token
     req.user = await User.findById(decoded.userId).select('-password');
-    
     next();
   } catch (error) {
     console.error(error);

@@ -14,29 +14,31 @@ import "./App.css";
 import '@/styles/driver-overrides.css';
 import { useEffect } from 'react';
 import { setupTour } from '@/lib/tour';
+import { useState } from 'react';
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  useEffect(() => {
-    // Development-only tour reset function
-    if (process.env.NODE_ENV === 'development') {
-      (window as any).resetTour = () => {
-        localStorage.removeItem('hasCompletedTour');
-        window.location.reload();
-      };
-    }
+  const [authChecked, setAuthChecked] = useState(false);
 
-    // Start tour for new users
-    const hasCompletedTour = localStorage.getItem('hasCompletedTour');
-    if (!hasCompletedTour && window.location.pathname === '/') {
-      const timer = setTimeout(() => {
-        const tour = setupTour();
-        tour.drive();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const user = await res.json();
+          // Optional: Store user in context here if needed
+        }
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+    checkAuth();
   }, []);
+
+  if (!authChecked) {
+    return <div>Loading...</div>; // Show a splash screen
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

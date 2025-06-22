@@ -29,22 +29,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const checkAuth = async () => {
+      setLoading(true);
       try {
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        }
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        setUser(res.ok ? await res.json() : null);
       } catch (error) {
         console.error('Auth check failed:', error);
       } finally {
         setLoading(false);
       }
     };
-    
     checkAuth();
   }, []);
 

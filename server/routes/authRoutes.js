@@ -8,9 +8,12 @@ const {
   getMe,
 } = require('../controllers/authController');
 
+// Public routes (no auth required)
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.post('/logout', logoutUser);
-router.get('/me', protect, getMe);
+
+// Protected routes (auth required)
+router.post('/logout', protect, logoutUser); // Logout requires valid token
+router.get('/me', protect, getMe); // Fetch user data requires auth
 
 module.exports = router;

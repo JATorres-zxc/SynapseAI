@@ -13,6 +13,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const app = express();
 const httpServer = createServer(app);
 const path = require('path');
+const { protect } = require('./middleware/authMiddleware');
 
 // Socket.IO setup
 const io = new Server(httpServer, {
@@ -70,6 +71,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     res.setHeader('Content-Type', contentType);
   }
 }));
+app.get('/api/protected-route', protect, (req, res) => {
+  res.json({ message: 'This is protected!' });
+});
 app.use('/api/chats', chatRoutes);
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
