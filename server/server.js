@@ -32,13 +32,20 @@ const io = new Server(httpServer, {
   }
 });
 
-// CORS configuration
+// CORS configuration with better debugging
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('CORS request from origin:', origin);
+    console.log('Allowed origins:', ALLOWED_ORIGINS);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('Allowing request with no origin');
+      return callback(null, true);
+    }
     
     if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+      console.log('Origin allowed:', origin);
       callback(null, true);
     } else {
       console.warn(`CORS blocked request from: ${origin}`);
