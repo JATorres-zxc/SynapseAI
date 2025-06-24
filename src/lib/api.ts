@@ -31,18 +31,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle common errors
-    if (error.response?.status === 401) {
-      // Don't redirect on auth-related endpoints to prevent infinite loops
-      const isAuthEndpoint = error.config?.url?.includes('/api/auth/');
-      const isLoginPage = window.location.pathname === '/login';
-      const isRegisterPage = window.location.pathname === '/register';
-      
-      // Only redirect if we're not already on login/register page and not calling auth endpoints
-      if (!isAuthEndpoint && !isLoginPage && !isRegisterPage) {
-        window.location.href = '/login';
-      }
-    }
+    // Log errors for debugging but don't automatically redirect
+    console.error('API Error:', error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
 );

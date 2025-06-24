@@ -34,9 +34,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const response = await apiService.auth.me();
         setUser(response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth check failed:', error);
-        setUser(null);
+        // Don't set user to null here, let the component handle it
+        // This prevents unnecessary redirects
       } finally {
         setLoading(false);
       }
@@ -67,11 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await apiService.auth.logout();
-      setUser(null);
-      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear user state even if logout request fails
+    } finally {
+      // Always clear user state and redirect, even if logout request fails
       setUser(null);
       navigate('/login');
     }
