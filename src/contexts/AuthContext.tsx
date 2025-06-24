@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/lib/api';
 
 interface User {
   _id: string;
@@ -31,10 +32,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        setUser(res.ok ? await res.json() : null);
+        const response = await apiService.auth.me();
+        setUser(response.data);
       } catch (error) {
         console.error('Auth check failed:', error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -43,103 +45,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-    
-    if (response.ok) {
-      setUser(data);
+    try {
+      const response = await apiService.auth.login({ email, password });
+      setUser(response.data);
       navigate('/');
-    } else {
-      throw new Error(data.message || 'Login failed');
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Login failed');
     }
   };
 
   const register = async (username: string, email: string, password: string) => {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, email, password }),
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-    
-    if (response.ok) {
-      setUser(data);
+    try {
+      const response = await apiService.auth.register({ username, email, password });
+      setUser(response.data);
       navigate('/');
-    } else {
-      throw new Error(data.message || 'Registration failed');
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Registration failed');
     }
   };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-    setUser(null);
-    navigate('/login');
+    try {
+      await apiService.auth.logout();
+      setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear user state even if logout request fails
+      setUser(null);
+      navigate('/login');
+    }
   };
 
   const updateUser = async (userData: Partial<User>) => {
     try {
-      const response = await fetch('/api/users/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-        credentials: 'include',
-      });
-
-      // First check if the response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
-      }
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to update profile');
-      }
-
-      setUser(data.user);
-      return data;
-    } catch (error) {
+      const response = await apiService.users.update({ username: userData.username! });
+      setUser(response.data.user);
+      return response.data;
+    } catch (error: any) {
       console.error('Update error:', error);
-      throw new Error(error.message || 'Failed to update user');
+      throw new Error(error.response?.data?.message || 'Failed to update user');
     }
   };
 
   const deactivateAccount = async () => {
     try {
-      const response = await fetch('/api/auth/deactivate', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to deactivate account');
-      }
-
-      return data;
-    } catch (error) {
+      const response = await apiService.auth.deactivate();
+      return response.data;
+    } catch (error: any) {
       console.error('Deactivation error:', error);
-      throw error;
+      throw new Error(error.response?.data?.message || 'Failed to deactivate account');
     }
   };
 

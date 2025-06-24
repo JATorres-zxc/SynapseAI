@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Search, User } from 'lucide-react';
 import { User as UserType } from '@/types/user';
+import { apiService } from '@/lib/api';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -32,21 +33,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, currentUserI
         setError(null);
         
         try {
-          const response = await fetch('/api/users', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error(response.status === 401 ? 'Please login again' : 'Failed to fetch users');
-          }
-
-          const data = await response.json();
-          setUsers(data);
-          setFilteredUsers(data);
-        } catch (err) {
-          setError(err.message);
+          const response = await apiService.users.getAll();
+          setUsers(response.data);
+          setFilteredUsers(response.data);
+        } catch (err: any) {
+          setError(err.response?.data?.message || 'Failed to fetch users');
           console.error('User search error:', err);
         } finally {
           setIsLoading(false);

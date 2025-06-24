@@ -4,9 +4,10 @@ import { useSocket } from '@/contexts/SocketContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FilePlus2, X } from 'lucide-react';
-import axios from 'axios';
 import { FileAttachment } from '@/types/message';
 import { setupTour } from '@/lib/tour';
+import { apiService } from '@/lib/api';
+
 interface MessageInputProps {
   chatId: string;
   currentUserId: string;
@@ -33,12 +34,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         const formData = new FormData();
         formData.append('file', selectedFile);
 
-        const response = await axios.post('/api/messages/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
+        const response = await apiService.messages.upload(formData);
         setFile(response.data);
       } catch (error) {
         console.error('Error uploading file:', error);

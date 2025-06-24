@@ -12,34 +12,10 @@ import Chat from "./pages/Chat";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 import '@/styles/driver-overrides.css';
-import { useEffect } from 'react';
-import { setupTour } from '@/lib/tour';
-import { useState } from 'react';
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (res.ok) {
-          const user = await res.json();
-          // Optional: Store user in context here if needed
-        }
-      } finally {
-        setAuthChecked(true);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  if (!authChecked) {
-    return <div>Loading...</div>; // Show a splash screen
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

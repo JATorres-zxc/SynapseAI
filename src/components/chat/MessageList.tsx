@@ -4,6 +4,7 @@ import { useSocket } from '@/contexts/SocketContext';
 import { Message } from '@/types/message';
 import MessageItem from './MessageItem';
 import { Loader2, MessageSquare } from 'lucide-react';
+import { apiService } from '@/lib/api';
 
 interface MessageListProps {
   userId: string;
@@ -51,8 +52,8 @@ const MessageList: React.FC<MessageListProps> = ({ userId, currentUserId }) => {
     const fetchMessages = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/messages/${userId}`);
-        const data = await res.json();
+        const response = await apiService.messages.getByUserId(userId);
+        const data = response.data;
 
         if (Array.isArray(data)) {
           setMessages(data);

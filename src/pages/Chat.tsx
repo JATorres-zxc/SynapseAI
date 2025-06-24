@@ -3,11 +3,9 @@ import Sidebar from '@/components/chat/Sidebar';
 import ChatArea from '@/components/chat/ChatArea';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { User } from '@/types/user';
-import { initSocket } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocket } from '@/contexts/SocketContext';
 import { setupTour } from '@/lib/tour';
-
-let socket: ReturnType<typeof initSocket>;
 
 const Chat = () => {
   const [selectedChatId, setSelectedChatId] = useState<string>('chat1');
@@ -16,12 +14,11 @@ const Chat = () => {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const isMobile = useIsMobile();
   const { user } = useAuth(); // 🔑 get current logged-in user
+  const socket = useSocket(); // Use socket from context
 
-  // 🧠 Setup socket only when user is available
+  // 🧠 Setup socket events when socket and user are available
   useEffect(() => {
-    if (!user?._id) return;
-
-    socket = initSocket(user._id); // initialize with userId
+    if (!socket || !user?._id) return;
 
     socket.on('connect', () => {
       console.log('Socket connected');
@@ -32,10 +29,14 @@ const Chat = () => {
       setOnlineUsers(users);
     });
 
+    // Request online users when component mounts
+    socket.emit('getOnlineUsers');
+
     return () => {
-      socket.disconnect();
+      socket.off('connect');
+      socket.off('onlineUsers');
     };
-  }, [user?._id]);
+  }, [socket, user?._id]);
 
   const handleChatSelect = (chatId: string, user: User | null) => {
     setSelectedChatId(chatId);

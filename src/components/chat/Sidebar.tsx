@@ -9,9 +9,9 @@ import { LogOut, Moon, Sun, Plus, MessageSquare, Users, User as UserIcon, Search
 import ProfileModal from '@/components/ProfileModal';
 import SearchModal from '@/components/search/SearchModal';
 import ChatbotModal from '@/components/chat/ChatbotModal';
-import axios from 'axios';
 import { User } from '@/types/user';
-import { initSocket } from '@/lib/socket';
+import { createSocket } from '@/lib/socket';
+import { apiService } from '@/lib/api';
 import { HelpCircle } from 'lucide-react';
 import { setupTour } from '@/lib/tour';
 
@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get<User[]>('/api/users');
+        const response = await apiService.users.getAll();
         console.log('API Response:', response);
         setAllUsers(response.data);
       } catch (error) {
@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
     // Only initialize socket if user is ready
     if (!user?._id) return;
 
-    const newSocket = initSocket(user._id);
+    const newSocket = createSocket(user._id);
     newSocket.emit('getOnlineUsers');
 
     newSocket.on('onlineUsers', (onlineUserIds: string[]) => {
@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, selectedChatId, onCh
   const handleStartChat = async (userId: string) => {
     try {
       // 1. Find or create a chat with this user
-      const response = await axios.post('/api/chats', {
+      const response = await apiService.chats.create({
         recipientId: userId
       });
 

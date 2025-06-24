@@ -8,14 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000', // Your backend server URL
-        changeOrigin: true,
-        secure: false,
-        // rewrite: (path) => path.replace(/^\/api/, '') // Optional: removes /api prefix when forwarding
-      }
-    }
+    // Proxy removed - using environment variables for API URLs
   },
   plugins: [
     react(),
