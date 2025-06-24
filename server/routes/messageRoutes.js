@@ -65,40 +65,6 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
   }
 });
 
-// Add this route to serve files with proper headers
-router.get('/uploads/:filename', (req, res) => {
-  try {
-    const filePath = path.join(__dirname, '../../uploads', req.params.filename);
-    
-    if (!fs.existsSync(filePath)) {
-      console.error('File not found:', filePath);
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    const contentType = mime.lookup(filePath) || 'application/octet-stream';
-    const filename = req.query.originalname || req.params.filename;
-    
-    console.log('Serving file:', {
-      path: filePath,
-      type: contentType,
-      name: filename
-    });
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-    
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.on('error', (err) => {
-      console.error('File stream error:', err);
-      res.status(500).json({ error: 'Error reading file' });
-    });
-    fileStream.pipe(res);
-  } catch (err) {
-    console.error('File serve error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Get messages between two users
 router.get('/:userId', protect, async (req, res) => {
   try {
