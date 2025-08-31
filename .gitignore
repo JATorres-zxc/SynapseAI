@@ -40,3 +40,5 @@ server/uploads/
 
 # Specifically ignore server env
 server/.env
+**/.env
+**/.env.*
