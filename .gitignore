@@ -33,3 +33,10 @@ server/uploads/
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore all env files everywhere
+*.env
+*.env.*
+
+# Specifically ignore server env
+server/.env
